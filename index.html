@@ -8,7 +8,7 @@
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3737/3737372.png">
     <title>Einkauf Pro</title>
     <style>
-        :root { --apple-blue: #007AFF; }
+        :root { --apple-blue: #007AFF; --apple-gray: #8e8e93; }
         body { font-family: -apple-system, system-ui; background: #f2f2f7; margin: 0; padding-bottom: env(safe-area-inset-bottom); scroll-behavior: smooth; }
         
         .header { 
@@ -29,9 +29,19 @@
             border-radius: 10px; padding: 0 15px; font-weight: bold; font-size: 20px;
         }
 
+        /* Suchfeld Container für das X */
+        .search-container { position: relative; width: 100%; }
+
         .search-box {
-            width: 100%; padding: 8px 12px; border-radius: 8px; box-sizing: border-box;
+            width: 100%; padding: 8px 35px 8px 12px; border-radius: 8px; box-sizing: border-box;
             border: none; background: #eeeef0; font-size: 14px; outline: none;
+        }
+
+        .clear-search {
+            position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+            width: 18px; height: 18px; background: var(--apple-gray); color: white;
+            border-radius: 50%; display: none; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: bold; cursor: pointer; opacity: 0.8;
         }
 
         .list-container { padding: 15px; padding-bottom: 80px; }
@@ -62,7 +72,6 @@
 
         .edit-hint { font-size: 10px; color: #8e8e93; text-align: center; margin-top: -10px; margin-bottom: 10px; }
 
-        /* Nach oben Button */
         #scrollTopBtn {
             position: fixed; bottom: 30px; right: 20px;
             background: var(--apple-blue); color: white;
@@ -70,7 +79,6 @@
             display: none; align-items: center; justify-content: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             border: none; font-size: 24px; z-index: 1000;
-            cursor: pointer; -webkit-tap-highlight-color: transparent;
         }
     </style>
 </head>
@@ -82,7 +90,11 @@
         <button class="add-btn" onclick="addNewItem()">+</button>
     </div>
     <div class="edit-hint">Tippe auf Text zum Umbenennen • Haken = Oben fixieren</div>
-    <input type="text" class="search-box" id="searchInput" placeholder="In Liste suchen..." oninput="render()">
+    
+    <div class="search-container">
+        <input type="text" class="search-box" id="searchInput" placeholder="In Liste suchen..." oninput="handleSearchInput()">
+        <div id="clearSearchBtn" class="clear-search" onclick="clearSearch()">✕</div>
+    </div>
 </div>
 
 <div id="listContainer" class="list-container"></div>
@@ -114,7 +126,6 @@
         items = initialList.map(name => ({ name, checked: false }));
     }
 
-    // Scroll-Button Logik
     window.onscroll = function() {
         const btn = document.getElementById("scrollTopBtn");
         if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
@@ -123,6 +134,20 @@
             btn.style.display = "none";
         }
     };
+
+    function handleSearchInput() {
+        const input = document.getElementById('searchInput');
+        const clearBtn = document.getElementById('clearSearchBtn');
+        clearBtn.style.display = input.value.length > 0 ? "flex" : "none";
+        render();
+    }
+
+    function clearSearch() {
+        const input = document.getElementById('searchInput');
+        input.value = '';
+        handleSearchInput();
+        input.focus();
+    }
 
     function sortItems() {
         items.sort((a, b) => {
