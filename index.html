@@ -9,7 +9,7 @@
     <title>Einkauf Pro</title>
     <style>
         :root { --apple-blue: #007AFF; }
-        body { font-family: -apple-system, system-ui; background: #f2f2f7; margin: 0; padding-bottom: env(safe-area-inset-bottom); }
+        body { font-family: -apple-system, system-ui; background: #f2f2f7; margin: 0; padding-bottom: env(safe-area-inset-bottom); scroll-behavior: smooth; }
         
         .header { 
             position: sticky; top: 0; background: rgba(255,255,255,0.9); 
@@ -34,13 +34,12 @@
             border: none; background: #eeeef0; font-size: 14px; outline: none;
         }
 
-        .list-container { padding: 15px; }
+        .list-container { padding: 15px; padding-bottom: 80px; }
 
         .list-item {
             background: white; padding: 14px; border-radius: 12px;
             margin-bottom: 8px; display: flex; align-items: center;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            transition: all 0.2s ease;
         }
 
         .list-item input[type="checkbox"] {
@@ -54,11 +53,25 @@
         .delete-btn { color: #ff3b30; font-size: 18px; padding: 5px 10px; opacity: 0.3; }
         
         .section-divider {
+            display: flex; justify-content: space-between; align-items: center;
             font-size: 12px; font-weight: bold; color: #8e8e93;
-            margin: 20px 0 10px 5px; text-transform: uppercase; letter-spacing: 0.5px;
+            margin: 20px 0 10px 5px; text-transform: uppercase;
         }
 
+        .reset-link { color: var(--apple-blue); cursor: pointer; text-transform: none; font-weight: normal; }
+
         .edit-hint { font-size: 10px; color: #8e8e93; text-align: center; margin-top: -10px; margin-bottom: 10px; }
+
+        /* Nach oben Button */
+        #scrollTopBtn {
+            position: fixed; bottom: 30px; right: 20px;
+            background: var(--apple-blue); color: white;
+            width: 45px; height: 45px; border-radius: 50%;
+            display: none; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            border: none; font-size: 24px; z-index: 1000;
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
+        }
     </style>
 </head>
 <body>
@@ -73,6 +86,8 @@
 </div>
 
 <div id="listContainer" class="list-container"></div>
+
+<button id="scrollTopBtn" onclick="window.scrollTo(0,0)">↑</button>
 
 <script>
     const initialList = [
@@ -99,15 +114,29 @@
         items = initialList.map(name => ({ name, checked: false }));
     }
 
+    // Scroll-Button Logik
+    window.onscroll = function() {
+        const btn = document.getElementById("scrollTopBtn");
+        if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+            btn.style.display = "flex";
+        } else {
+            btn.style.display = "none";
+        }
+    };
+
     function sortItems() {
         items.sort((a, b) => {
-            // Zuerst nach "checked" Status sortieren (checked oben)
-            if (a.checked !== b.checked) {
-                return a.checked ? -1 : 1;
-            }
-            // Dann alphabetisch innerhalb der Gruppen
+            if (a.checked !== b.checked) return a.checked ? -1 : 1;
             return a.name.localeCompare(b.name, 'de', { sensitivity: 'base' });
         });
+    }
+
+    function resetAll() {
+        if(confirm('Alle Markierungen aufheben?')) {
+            items.forEach(item => item.checked = false);
+            render();
+            window.scrollTo(0,0);
+        }
     }
 
     function render() {
@@ -123,11 +152,10 @@
         items.forEach((item, index) => {
             if (item.name.toLowerCase().includes(searchTerm)) {
                 
-                // Füge Trenner ein, wenn der erste nicht-markierte Artikel kommt
                 if (!item.checked && hasChecked && !separatorAdded && searchTerm === "") {
                     const divider = document.createElement('div');
                     divider.className = 'section-divider';
-                    divider.innerText = "Alle Artikel";
+                    divider.innerHTML = `<span>Alle Artikel</span><span class="reset-link" onclick="resetAll()">Alle abwählen</span>`;
                     container.appendChild(divider);
                     separatorAdded = true;
                 }
@@ -148,9 +176,10 @@
     function addNewItem() {
         const input = document.getElementById('newItemInput');
         if (input.value.trim() !== '') {
-            items.push({ name: input.value.trim(), checked: true }); // Neue direkt nach oben
+            items.push({ name: input.value.trim(), checked: true });
             input.value = '';
             render();
+            window.scrollTo(0,0);
         }
     }
 
