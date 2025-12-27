@@ -30,7 +30,7 @@
         }
 
         .search-box {
-            width: 100%; padding: 8px 12px; border-radius: 8px;
+            width: 100%; padding: 8px 12px; border-radius: 8px; box-sizing: border-box;
             border: none; background: #eeeef0; font-size: 14px; outline: none;
         }
 
@@ -40,6 +40,7 @@
             background: white; padding: 14px; border-radius: 12px;
             margin-bottom: 8px; display: flex; align-items: center;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
         }
 
         .list-item input[type="checkbox"] {
@@ -47,10 +48,16 @@
         }
 
         .item-text { font-size: 17px; flex-grow: 1; cursor: pointer; }
-        .checked .item-text { text-decoration: line-through; color: #8e8e93; }
+        .checked { background: #f0f9ff; border: 1px solid #b3d7ff; }
+        .checked .item-text { font-weight: 600; color: #000; }
 
         .delete-btn { color: #ff3b30; font-size: 18px; padding: 5px 10px; opacity: 0.3; }
         
+        .section-divider {
+            font-size: 12px; font-weight: bold; color: #8e8e93;
+            margin: 20px 0 10px 5px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
         .edit-hint { font-size: 10px; color: #8e8e93; text-align: center; margin-top: -10px; margin-bottom: 10px; }
     </style>
 </head>
@@ -61,7 +68,7 @@
         <input type="text" id="newItemInput" class="input-field" placeholder="Neuer Artikel...">
         <button class="add-btn" onclick="addNewItem()">+</button>
     </div>
-    <div class="edit-hint">Tippe auf einen Text zum Umbenennen</div>
+    <div class="edit-hint">Tippe auf Text zum Umbenennen • Haken = Oben fixieren</div>
     <input type="text" class="search-box" id="searchInput" placeholder="In Liste suchen..." oninput="render()">
 </div>
 
@@ -93,7 +100,14 @@
     }
 
     function sortItems() {
-        items.sort((a, b) => a.name.localeCompare(b.name, 'de', { sensitivity: 'base' }));
+        items.sort((a, b) => {
+            // Zuerst nach "checked" Status sortieren (checked oben)
+            if (a.checked !== b.checked) {
+                return a.checked ? -1 : 1;
+            }
+            // Dann alphabetisch innerhalb der Gruppen
+            return a.name.localeCompare(b.name, 'de', { sensitivity: 'base' });
+        });
     }
 
     function render() {
@@ -103,8 +117,21 @@
         
         sortItems();
 
+        let separatorAdded = false;
+        const hasChecked = items.some(i => i.checked);
+
         items.forEach((item, index) => {
             if (item.name.toLowerCase().includes(searchTerm)) {
+                
+                // Füge Trenner ein, wenn der erste nicht-markierte Artikel kommt
+                if (!item.checked && hasChecked && !separatorAdded && searchTerm === "") {
+                    const divider = document.createElement('div');
+                    divider.className = 'section-divider';
+                    divider.innerText = "Alle Artikel";
+                    container.appendChild(divider);
+                    separatorAdded = true;
+                }
+
                 const div = document.createElement('div');
                 div.className = `list-item ${item.checked ? 'checked' : ''}`;
                 div.innerHTML = `
@@ -121,7 +148,7 @@
     function addNewItem() {
         const input = document.getElementById('newItemInput');
         if (input.value.trim() !== '') {
-            items.push({ name: input.value.trim(), checked: false });
+            items.push({ name: input.value.trim(), checked: true }); // Neue direkt nach oben
             input.value = '';
             render();
         }
@@ -139,7 +166,6 @@
         }
     }
 
-    // NEU: Funktion zum Umbenennen
     function renameItem(index) {
         const currentName = items[index].name;
         const newName = prompt("Artikel umbenennen:", currentName);
